@@ -30,9 +30,19 @@ func confirmationMessage(msg string) {
 
 }
 
+func handleErr(err error) {
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+}
+
 func main() {
 
-    config := prodpunch.LoadConfig("config.json")
+    config, err := prodpunch.LoadConfig("config.json")
+
+    handleErr(err)
 
 	instances := prodpunch.GetInstancesWithTags(
         config.Target.Stack,
@@ -46,20 +56,24 @@ func main() {
 
         log.Printf("Using instance: %s\n", instance.InstanceId)
 
-        elb := prodpunch.GetLoadBalancerForInstance(
+        elb, err := prodpunch.GetLoadBalancerForInstance(
             config.Target.Stack,
             instance,
         )
+
+        handleErr(err)
 
         confirmationMessage(
             "Going to detach instance from its ELB, OK?",
         )
 
-        prodpunch.DetachInstanceFromELB(
+        err = prodpunch.DetachInstanceFromELB(
             config.Target.Stack,
             elb,
             instance,
         )
+
+        handleErr(err)
 
         log.Println("Waiting for connections to drain")
         time.Sleep(60 * time.Second)

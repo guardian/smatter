@@ -20,12 +20,12 @@ type ProdPunchConfig struct {
 
 // load config from json file
 
-func LoadConfig(path string) *ProdPunchConfig {
+func LoadConfig(path string) (*ProdPunchConfig, error) {
 
     jsonBlob, readErr := ioutil.ReadFile(path)
 
     if readErr != nil {
-        panic("Unable to load configuration file")
+        return &ProdPunchConfig{}, readErr
     }
 
 	var config *ProdPunchConfig
@@ -33,9 +33,9 @@ func LoadConfig(path string) *ProdPunchConfig {
 	jsonErr := json.Unmarshal(jsonBlob, &config)
 
 	if jsonErr != nil {
-		panic("Failed to parse configuration file")
+        return &ProdPunchConfig{}, jsonErr
 	}
 
-	return config
+	return config, nil
 
 }

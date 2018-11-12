@@ -2,12 +2,12 @@ package lib
 
 import (
     "log"
+    "errors"
 	"github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/credentials"
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/ec2"
     "github.com/aws/aws-sdk-go/service/elb"
-    _ "github.com/aws/aws-sdk-go/service/autoscaling"
 )
 
 type EC2Instance struct {
@@ -28,7 +28,7 @@ func isInstanceInELB(elb *elb.LoadBalancerDescription, instance EC2Instance) boo
     return false
 }
 
-func GetLoadBalancerForInstance(profile string, instance EC2Instance) ELB {
+func GetLoadBalancerForInstance(profile string, instance EC2Instance) (ELB, error) {
 
     sess, err := session.NewSession(&aws.Config{
         Region:      aws.String("eu-west-1"),
@@ -36,7 +36,7 @@ func GetLoadBalancerForInstance(profile string, instance EC2Instance) ELB {
     })
 
     if err != nil {
-        log.Fatal(err)
+        return ELB{}, err
     }
 
     svc := elb.New(sess)
@@ -51,20 +51,18 @@ func GetLoadBalancerForInstance(profile string, instance EC2Instance) ELB {
 	resp, err := svc.DescribeLoadBalancers(params)
 
     if err != nil {
-        log.Fatal(err)
+        return ELB{}, err
     }
 
     // TODO: Paging
     for idx, _ := range resp.LoadBalancerDescriptions {
         elb := resp.LoadBalancerDescriptions[idx]
         if isInstanceInELB(elb, instance) {
-            return ELB{*elb.LoadBalancerName}
+            return ELB{*elb.LoadBalancerName}, nil
         }
     }
 
-    log.Fatal("Failed to find an ELB for the chosen instance")
-
-    panic("Can't get here")
+    return ELB{}, errors.New("Could not find ELB for instance")
 
 }
 
@@ -124,7 +122,7 @@ func GetInstancesWithTags(profile string, app string, stage string) []EC2Instanc
 
 }
 
-func DetachInstanceFromELB(profile string, loadBalancer ELB, instance EC2Instance) bool {
+func DetachInstanceFromELB(profile string, loadBalancer ELB, instance EC2Instance) error {
 
     sess, err := session.NewSession(&aws.Config{
         Region:      aws.String("eu-west-1"),
@@ -132,7 +130,7 @@ func DetachInstanceFromELB(profile string, loadBalancer ELB, instance EC2Instanc
     })
 
     if err != nil {
-        log.Fatal("Error connecting to aws")
+        return err
     }
 
     svc := elb.New(sess)
@@ -147,10 +145,9 @@ func DetachInstanceFromELB(profile string, loadBalancer ELB, instance EC2Instanc
     _, detachErr := svc.DeregisterInstancesFromLoadBalancer(input)
 
     if detachErr != nil {
-        log.Fatal(detachErr)
-        return false
+        return detachErr
     } else {
-        return true
+        return nil
     }
 
 }
