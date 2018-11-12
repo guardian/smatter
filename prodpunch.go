@@ -76,7 +76,7 @@ func main() {
         handleErr(err)
 
         log.Println("Waiting for connections to drain")
-        time.Sleep(60 * time.Second)
+        time.Sleep(time.Duration(config.SecondsToDrain) * time.Second)
 
         url := "http://" + instance.PublicDnsName + ":9000/_healthcheck"
 

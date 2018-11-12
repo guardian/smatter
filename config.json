@@ -2,7 +2,8 @@
     "Target": {
         "Stack": "frontend",
         "App": "article",
-        "Stage": "PROD",
-        "MininumAllowedInstances": 2
-    }
+        "Stage": "PROD"
+    },
+    "MininumAllowedInstances": 2,
+    "SecondsToDrain": 60
 }
