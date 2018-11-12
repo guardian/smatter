@@ -2,43 +2,40 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
+    "io/ioutil"
 )
 
-// test config
-
-var jsonBlob = []byte(`{
-    "Target": { 
-        "Stack": "frontend", 
-        "App": "article", 
-        "Stage": "prod"
-    }
-}`)
-
-// types of json decoding
+// types for json decoding
 
 type ProdPunchTarget struct {
 	Stack string
 	App string
 	Stage string
 }
-	
+
 type ProdPunchConfig struct {
 	Target ProdPunchTarget
+    MininumAllowedInstances int
 }
 
 // load config from json file
 
-func LoadConfig() *ProdPunchConfig {
-	
+func LoadConfig(path string) *ProdPunchConfig {
+
+    jsonBlob, readErr := ioutil.ReadFile(path)
+
+    if readErr != nil {
+        panic("Unable to load configuration file")
+    }
+
 	var config *ProdPunchConfig
 
-	err := json.Unmarshal(jsonBlob, &config)
-	
-	if err != nil {
-		fmt.Println("error:", err)
+	jsonErr := json.Unmarshal(jsonBlob, &config)
+
+	if jsonErr != nil {
+		panic("Failed to parse configuration file")
 	}
 
 	return config
-	
+
 }

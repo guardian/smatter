@@ -1,0 +1,8 @@
+{
+    "Target": {
+        "Stack": "frontend",
+        "App": "article",
+        "Stage": "PROD",
+        "MininumAllowedInstances": 2
+    }
+}

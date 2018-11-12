@@ -1,39 +1,156 @@
 package lib
 
 import (
-	"fmt"
-	aws "github.com/aws/aws-sdk-go/aws"
+    "log"
+	"github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/aws/credentials"
+    "github.com/aws/aws-sdk-go/aws/session"
+    "github.com/aws/aws-sdk-go/service/ec2"
+    "github.com/aws/aws-sdk-go/service/elb"
+    _ "github.com/aws/aws-sdk-go/service/autoscaling"
 )
 
-func GetInstancesWithTags(profile string, app string) {
+type EC2Instance struct {
+    PublicDnsName string
+    InstanceId string
+}
 
-	svc := ec2.New(&aws.Config{
-		Credentials: aws.credentials.NewSharedCredentials("", profile),
-		Region:      "eu-west-1",
-	})
+type ELB struct {
+    Name string
+}
+
+func isInstanceInELB(elb *elb.LoadBalancerDescription, instance EC2Instance) bool {
+    for idx, _ := range elb.Instances {
+        if *elb.Instances[idx].InstanceId == instance.InstanceId {
+           return true
+        }
+    }
+    return false
+}
+
+func GetLoadBalancerForInstance(profile string, instance EC2Instance) ELB {
+
+    sess, err := session.NewSession(&aws.Config{
+        Region:      aws.String("eu-west-1"),
+        Credentials: credentials.NewSharedCredentials("", profile),
+    })
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    svc := elb.New(sess)
+
+    // aws provides no mechanism to get ELB by tag or instance id, so we have to
+    // iterate through every single ELB and find it manually.
+
+	params := &elb.DescribeLoadBalancersInput{
+        LoadBalancerNames: []*string{ },
+	}
+
+	resp, err := svc.DescribeLoadBalancers(params)
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // TODO: Paging
+    for idx, _ := range resp.LoadBalancerDescriptions {
+        elb := resp.LoadBalancerDescriptions[idx]
+        if isInstanceInELB(elb, instance) {
+            return ELB{*elb.LoadBalancerName}
+        }
+    }
+
+    log.Fatal("Failed to find an ELB for the chosen instance")
+
+    panic("Can't get here")
+
+}
+
+func GetInstancesWithTags(profile string, app string, stage string) []EC2Instance {
+
+    sess, err := session.NewSession(&aws.Config{
+        Region:      aws.String("eu-west-1"),
+        Credentials: credentials.NewSharedCredentials("", profile),
+    })
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    svc := ec2.New(sess)
 
 	params := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			&ec2.Filter{
 				Name: aws.String("tag:App"),
 				Values: []*string{
-					aws.String(app),
+					aws.String("article"),
+				},
+			},
+            &ec2.Filter{
+				Name: aws.String("tag:Stage"),
+				Values: []*string{
+					aws.String(stage),
 				},
 			},
 		},
 	}
 
-	res, _ := svc.DescribeInstances(params)
+	resp, err := svc.DescribeInstances(params)
 
-	for _, i := range res.Reservations[0].Instances {
-		var nt string
-		for _, t := range i.Tags {
-			if *t.Key == "App" {
-				nt = *t.Value
-				fmt.Println(nt, *i.InstanceID, *i.State.Name)
-			}
-		}
+    if err != nil {
+       log.Fatal(err)
+    }
 
-	}
+    var instanceIds = []EC2Instance{}
+
+    for idx, _ := range resp.Reservations {
+		for _, inst := range resp.Reservations[idx].Instances {
+            if *inst.State.Name == "running" {
+                instanceIds = append(
+                    instanceIds,
+                    EC2Instance{
+                        InstanceId: *inst.InstanceId,
+                        PublicDnsName: *inst.PublicDnsName,
+                    },
+                )
+            }
+        }
+    }
+
+    return instanceIds
+
+}
+
+func DetachInstanceFromELB(profile string, loadBalancer ELB, instance EC2Instance) bool {
+
+    sess, err := session.NewSession(&aws.Config{
+        Region:      aws.String("eu-west-1"),
+        Credentials: credentials.NewSharedCredentials("", profile),
+    })
+
+    if err != nil {
+        log.Fatal("Error connecting to aws")
+    }
+
+    svc := elb.New(sess)
+
+    input := &elb.DeregisterInstancesFromLoadBalancerInput{
+        Instances: []*elb.Instance{
+            { InstanceId: aws.String(instance.InstanceId) },
+        },
+        LoadBalancerName: aws.String(loadBalancer.Name),
+    }
+
+    _, detachErr := svc.DeregisterInstancesFromLoadBalancer(input)
+
+    if detachErr != nil {
+        log.Fatal(detachErr)
+        return false
+    } else {
+        return true
+    }
 
 }
