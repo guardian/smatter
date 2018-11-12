@@ -78,7 +78,7 @@ func main() {
         log.Println("Waiting for connections to drain")
         time.Sleep(time.Duration(config.SecondsToDrain) * time.Second)
 
-        url := "http://" + instance.PublicDnsName + ":9000/_healthcheck"
+        url := "http://" + instance.PublicDnsName + config.Endpoint
 
         metrics := prodpunch.LoadTest(
             url,

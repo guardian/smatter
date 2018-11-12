@@ -5,5 +5,6 @@
         "Stage": "PROD"
     },
     "MininumAllowedInstances": 2,
-    "SecondsToDrain": 60
+    "SecondsToDrain": 60,
+    "Endpoint": ":9000/_healthcheck"
 }

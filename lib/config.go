@@ -17,6 +17,7 @@ type ProdPunchConfig struct {
 	Target ProdPunchTarget
     MininumAllowedInstances int
     SecondsToDrain int
+    Endpoint string
 }
 
 // load config from json file
