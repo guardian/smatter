@@ -1,10 +1,10 @@
 package main
 
-// Prodpunch is a tool that aims to get accurate saturation metrics
+// Smatter is a tool that aims to get accurate saturation metrics
 // for a given service, by safely load testing real production instances
 // to the point where it begins to break its latency SLA.
 //
-// Implementation-wise, you give prodpunch a stack/app/stage that
+// Implementation-wise, you give smatter a stack/app/stage that
 // identifies your (ec2-based) service, and it will detach a production
 // instance from that services ELB, wait for it to drain, and then
 // use the Vegeta library to load test it until it breaks a given
@@ -16,7 +16,7 @@ import (
     "time"
     "bufio"
 
-	prodpunch "github.com/MatthewJWalls/prodpunch/lib"
+	smatter "github.com/MatthewJWalls/smatter/lib"
 )
 
 func confirmationMessage(msg string) {
@@ -40,11 +40,11 @@ func handleErr(err error) {
 
 func main() {
 
-    config, err := prodpunch.LoadConfig("config.json")
+    config, err := smatter.LoadConfig("config.json")
 
     handleErr(err)
 
-	instances := prodpunch.GetInstancesWithTags(
+	instances := smatter.GetInstancesWithTags(
         config.Target.Stack,
         config.Target.App,
         config.Target.Stage,
@@ -56,7 +56,7 @@ func main() {
 
         log.Printf("Using instance: %s\n", instance.InstanceId)
 
-        elb, err := prodpunch.GetLoadBalancerForInstance(
+        elb, err := smatter.GetLoadBalancerForInstance(
             config.Target.Stack,
             instance,
         )
@@ -65,7 +65,7 @@ func main() {
 
         log.Printf("Using elb: %s\n", elb.Name)
 
-        asg, err := prodpunch.GetAutoScalingGroupForInstance(
+        asg, err := smatter.GetAutoScalingGroupForInstance(
             config.Target.Stack,
             instance,
         )
@@ -78,7 +78,7 @@ func main() {
             "Going to detach instance from its ELB and ASG, OK?",
         )
 
-        err = prodpunch.DetachInstanceFromELB(
+        err = smatter.DetachInstanceFromELB(
             config.Target.Stack,
             elb,
             instance,
@@ -86,7 +86,7 @@ func main() {
 
         handleErr(err)
 
-        err = prodpunch.DetachInstanceFromASG(
+        err = smatter.DetachInstanceFromASG(
             config.Target.Stack,
             asg,
             instance,
@@ -99,7 +99,7 @@ func main() {
 
         url := "http://" + instance.PublicDnsName + config.Endpoint
 
-        metrics := prodpunch.LoadTest(
+        metrics := smatter.LoadTest(
             url,
             1 * time.Second,
             10,
