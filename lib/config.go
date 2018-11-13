@@ -7,14 +7,14 @@ import (
 
 // types for json decoding
 
-type ProdPunchTarget struct {
+type LoadTestTarget struct {
 	Stack string
 	App string
 	Stage string
 }
 
-type ProdPunchConfig struct {
-	Target ProdPunchTarget
+type LoadTestConfig struct {
+	Target LoadTestTarget
     MininumAllowedInstances int
     SecondsToDrain int
     Endpoint string
@@ -22,20 +22,20 @@ type ProdPunchConfig struct {
 
 // load config from json file
 
-func LoadConfig(path string) (*ProdPunchConfig, error) {
+func LoadConfig(path string) (*LoadTestConfig, error) {
 
     jsonBlob, readErr := ioutil.ReadFile(path)
 
     if readErr != nil {
-        return &ProdPunchConfig{}, readErr
+        return &LoadTestConfig{}, readErr
     }
 
-	var config *ProdPunchConfig
+	var config *LoadTestConfig
 
 	jsonErr := json.Unmarshal(jsonBlob, &config)
 
 	if jsonErr != nil {
-        return &ProdPunchConfig{}, jsonErr
+        return &LoadTestConfig{}, jsonErr
 	}
 
 	return config, nil
