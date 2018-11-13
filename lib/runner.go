@@ -1,9 +1,9 @@
 package lib
 
 import (
-	"time"
+    "time"
 
-	vegeta "github.com/tsenart/vegeta/lib"
+    vegeta "github.com/tsenart/vegeta/lib"
 
 )
 
