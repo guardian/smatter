@@ -16,7 +16,7 @@ import (
     "time"
     "bufio"
 
-	smatter "github.com/MatthewJWalls/smatter/lib"
+    smatter "github.com/MatthewJWalls/smatter/lib"
 )
 
 func confirmationMessage(msg string) {
