@@ -9,3 +9,22 @@ Implementation-wise, you give smatter a stack/app/stage that identifies your (ec
 Smatter is a command line utility.
 
 ```smatter -config path/to/config.json```
+
+## Example configuration
+
+Smatter finds instances to test using the standard Guardian stack/app/stage
+tags for services. It also assumes the stack name is the aws credentials profile
+name to use when calling the aws api.
+
+```
+{
+    "Target": {
+        "Stack": "guardian stack",
+        "App": "guardian app",
+        "Stage": "guardian stage"
+    },
+    "MininumAllowedInstances": 2,
+    "SecondsToDrain": 60,
+    "Endpoint": ":9000/_healthcheck"
+}
+```
