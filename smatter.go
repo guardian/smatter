@@ -46,6 +46,12 @@ func main() {
             ),
         )
 
+        err = smatter.DetachAndDrain(
+            config.Target.Stack,
+            instance,
+            time.Duration(config.SecondsToDrain) * time.Second,
+        )
+
         url := "http://" + instance.PublicDnsName + config.Endpoint
 
         metrics := smatter.LoadTest(

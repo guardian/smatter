@@ -2,6 +2,7 @@ package lib
 
 import (
     "log"
+    "time"
     "errors"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/credentials"
@@ -224,5 +225,52 @@ func GetAutoScalingGroupForInstance(profile string, instance EC2Instance) (ASG, 
     }
 
     return ASG{}, errors.New("Could not find ASG for instance")
+
+}
+
+
+func DetachAndDrain(profile string, instance EC2Instance, drainTime time.Duration) error {
+
+    elb, err := GetLoadBalancerForInstance(
+        profile,
+        instance,
+    )
+
+    if err != nil {
+        return err
+    }
+
+    asg, err := GetAutoScalingGroupForInstance(
+        profile,
+        instance,
+    )
+
+    if err != nil {
+        return err
+    }
+
+    err = DetachInstanceFromELB(
+        profile,
+        elb,
+        instance,
+    )
+
+    if err != nil {
+        return err
+    }
+
+    err = DetachInstanceFromASG(
+        profile,
+        asg,
+        instance,
+    )
+
+    if err != nil {
+        return err
+    }
+
+    time.Sleep(drainTime)
+
+    return nil
 
 }
