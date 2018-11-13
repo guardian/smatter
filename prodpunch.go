@@ -63,13 +63,32 @@ func main() {
 
         handleErr(err)
 
+        log.Printf("Using elb: %s\n", elb.Name)
+
+        asg, err := prodpunch.GetAutoScalingGroupForInstance(
+            config.Target.Stack,
+            instance,
+        )
+
+        handleErr(err)
+
+        log.Printf("Using asg: %s\n", asg.Name)
+
         confirmationMessage(
-            "Going to detach instance from its ELB, OK?",
+            "Going to detach instance from its ELB and ASG, OK?",
         )
 
         err = prodpunch.DetachInstanceFromELB(
             config.Target.Stack,
             elb,
+            instance,
+        )
+
+        handleErr(err)
+
+        err = prodpunch.DetachInstanceFromASG(
+            config.Target.Stack,
+            asg,
             instance,
         )
 

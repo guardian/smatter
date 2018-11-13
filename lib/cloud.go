@@ -8,6 +8,7 @@ import (
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/ec2"
     "github.com/aws/aws-sdk-go/service/elb"
+    "github.com/aws/aws-sdk-go/service/autoscaling"
 )
 
 type EC2Instance struct {
@@ -19,9 +20,22 @@ type ELB struct {
     Name string
 }
 
+type ASG struct {
+    Name string
+}
+
 func isInstanceInELB(elb *elb.LoadBalancerDescription, instance EC2Instance) bool {
     for idx, _ := range elb.Instances {
         if *elb.Instances[idx].InstanceId == instance.InstanceId {
+           return true
+        }
+    }
+    return false
+}
+
+func isInstanceInASG(asg *autoscaling.Group, instance EC2Instance) bool {
+    for idx, _ := range asg.Instances {
+        if *asg.Instances[idx].InstanceId == instance.InstanceId {
            return true
         }
     }
@@ -144,10 +158,71 @@ func DetachInstanceFromELB(profile string, loadBalancer ELB, instance EC2Instanc
 
     _, detachErr := svc.DeregisterInstancesFromLoadBalancer(input)
 
-    if detachErr != nil {
-        return detachErr
-    } else {
-        return nil
+    return detachErr
+
+}
+
+func DetachInstanceFromASG(profile string, scalingGroup ASG, instance EC2Instance) error {
+
+    sess, err := session.NewSession(&aws.Config{
+        Region:      aws.String("eu-west-1"),
+        Credentials: credentials.NewSharedCredentials("", profile),
+    })
+
+    if err != nil {
+        return err
     }
+
+    svc := autoscaling.New(sess)
+
+    input := &autoscaling.DetachInstancesInput{
+        AutoScalingGroupName: aws.String(scalingGroup.Name),
+        InstanceIds: []*string{
+            aws.String(instance.InstanceId),
+        },
+        ShouldDecrementDesiredCapacity: aws.Bool(false),
+    }
+
+    _, detachErr := svc.DetachInstances(input)
+
+    return detachErr
+
+}
+
+func GetAutoScalingGroupForInstance(profile string, instance EC2Instance) (ASG, error) {
+
+    sess, err := session.NewSession(&aws.Config{
+        Region:      aws.String("eu-west-1"),
+        Credentials: credentials.NewSharedCredentials("", profile),
+    })
+
+    if err != nil {
+        return ASG{}, err
+    }
+
+    svc := autoscaling.New(sess)
+
+    // aws provides no mechanism to get ASG by tag or instance id, so we have to
+    // iterate through every single ASG and find it manually.
+
+	params := &autoscaling.DescribeAutoScalingGroupsInput{
+        AutoScalingGroupNames: []*string{ },
+	}
+
+	resp, err := svc.DescribeAutoScalingGroups(params)
+
+    if err != nil {
+        return ASG{}, err
+    }
+
+    // TODO: Paging
+    for idx, _ := range resp.AutoScalingGroups {
+        asg := resp.AutoScalingGroups[idx]
+        if isInstanceInASG(asg, instance) {
+            return ASG{*asg.AutoScalingGroupName}, nil
+        }
+    }
+
+    return ASG{}, errors.New("Could not find ASG for instance")
 
 }
