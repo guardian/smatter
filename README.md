@@ -1,4 +1,4 @@
-# Smatter
+# Smatter - Load Testing for Guardian Apps
 
 Smatter is a tool that aims to get accurate saturation metrics for a given service, by safely load testing real production instances to the point where it begins to break its latency SLA.
 
