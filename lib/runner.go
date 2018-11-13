@@ -1,10 +1,9 @@
 package lib
 
 import (
-    "time"
+	"time"
 
-    vegeta "github.com/tsenart/vegeta/lib"
-
+	vegeta "github.com/tsenart/vegeta/lib"
 )
 
 // uses the vegeta library to run a load test against a target
