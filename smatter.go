@@ -1,17 +1,8 @@
 package main
 
-// Smatter is a tool that aims to get accurate saturation metrics
-// for a given service, by safely load testing real production instances
-// to the point where it begins to break its latency SLA.
-//
-// Implementation-wise, you give smatter a stack/app/stage that
-// identifies your (ec2-based) service, and it will detach a production
-// instance from that services ELB, wait for it to drain, and then
-// use the Vegeta library to load test it until it breaks a given
-// latency.
-
 import (
     "os"
+    "fmt"
     "log"
     "time"
     "bufio"
@@ -30,19 +21,13 @@ func confirmationMessage(msg string) {
 
 }
 
-func handleErr(err error) {
-
-    if err != nil {
-        log.Fatal(err)
-    }
-
-}
-
 func main() {
 
     config, err := smatter.LoadConfig("config.json")
 
-    handleErr(err)
+    if err != nil {
+        log.Fatal(err)
+    }
 
 	instances := smatter.GetInstancesWithTags(
         config.Target.Stack,
@@ -54,48 +39,12 @@ func main() {
 
         instance := instances[0]
 
-        log.Printf("Using instance: %s\n", instance.InstanceId)
-
-        elb, err := smatter.GetLoadBalancerForInstance(
-            config.Target.Stack,
-            instance,
-        )
-
-        handleErr(err)
-
-        log.Printf("Using elb: %s\n", elb.Name)
-
-        asg, err := smatter.GetAutoScalingGroupForInstance(
-            config.Target.Stack,
-            instance,
-        )
-
-        handleErr(err)
-
-        log.Printf("Using asg: %s\n", asg.Name)
-
         confirmationMessage(
-            "Going to detach instance from its ELB and ASG, OK?",
+            fmt.Sprintf(
+                "Going to detach instance %s from its ELB and ASG, OK?",
+                instance.InstanceId,
+            ),
         )
-
-        err = smatter.DetachInstanceFromELB(
-            config.Target.Stack,
-            elb,
-            instance,
-        )
-
-        handleErr(err)
-
-        err = smatter.DetachInstanceFromASG(
-            config.Target.Stack,
-            asg,
-            instance,
-        )
-
-        handleErr(err)
-
-        log.Println("Waiting for connections to drain")
-        time.Sleep(time.Duration(config.SecondsToDrain) * time.Second)
 
         url := "http://" + instance.PublicDnsName + config.Endpoint
 
