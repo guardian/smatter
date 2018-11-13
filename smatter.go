@@ -4,6 +4,7 @@ import (
     "os"
     "fmt"
     "log"
+    "flag"
     "time"
     "bufio"
 
@@ -23,7 +24,15 @@ func confirmationMessage(msg string) {
 
 func main() {
 
-    config, err := smatter.LoadConfig("config.json")
+    configLocation := flag.String(
+        "config",
+        "config.json",
+        "Path to the smatter config file",
+    )
+
+    flag.Parse()
+
+    config, err := smatter.LoadConfig(*configLocation)
 
     if err != nil {
         log.Fatal(err)
