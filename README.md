@@ -26,6 +26,7 @@ name to use when calling the aws api.
     "MininumAllowedInstances": 2,
     "SecondsToDrain": 60,
     "Endpoint": ":9000/_healthcheck",
-    "LatencyLimitSeconds": 5.0
+    "LatencyLimitSeconds": 5.0,
+    "InitialConcurrencyLevel": 60
 }
 ```

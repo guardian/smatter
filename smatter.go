@@ -67,7 +67,7 @@ func main() {
 		// the point where we break our latency SLA.
 
 		latencySLABreached := false
-		concurrency := 10
+		concurrency := config.InitialConcurrencyLevel
 
 		for latencySLABreached == false {
 
