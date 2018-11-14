@@ -18,6 +18,7 @@ type LoadTestConfig struct {
 	MininumAllowedInstances int
 	SecondsToDrain          int
 	Endpoint                string
+	LatencyLimitSeconds     float32
 }
 
 // load config from json file

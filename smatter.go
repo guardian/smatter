@@ -63,13 +63,39 @@ func main() {
 
 		url := "http://" + instance.PublicDnsName + config.Endpoint
 
-		metrics := smatter.LoadTest(
-			url,
-			1*time.Second,
-			10,
-		)
+		// load test at ever-increasing concurrency levels until we get to
+		// the point where we break our latency SLA.
 
-		log.Printf("99th percentile: %s\n", metrics.Latencies.P99)
+		latencySLABreached := false
+		concurrency := 10
+
+		for latencySLABreached == false {
+
+			log.Printf(
+				"Running load test at concurrency level %d\n",
+				concurrency,
+			)
+
+			metrics := smatter.LoadTest(
+				url,
+				30*time.Second,
+				concurrency,
+			)
+
+			log.Printf(
+				"99th percentile latency %s\n",
+				metrics.Latencies.P99,
+			)
+
+			if metrics.Latencies.P99 > time.Duration(config.LatencyLimitSeconds)*time.Second {
+				log.Println("Latency limit breached. Finishing.")
+				break
+			}
+
+			concurrency = int(float32(concurrency) * 1.2)
+			time.Sleep(30 * time.Second)
+
+		}
 
 	} else {
 
