@@ -83,11 +83,12 @@ func main() {
 			)
 
 			log.Printf(
-				"99th percentile latency %s\n",
+				"99th percentile latency %s, mean latency %s\n",
 				metrics.Latencies.P99,
+                metrics.Latencies.Mean,
 			)
 
-			if metrics.Latencies.P99 > time.Duration(config.LatencyLimitSeconds)*time.Second {
+			if metrics.Latencies.Mean > time.Duration(config.LatencyLimitSeconds)*time.Second {
 				log.Println("Latency limit breached. Finishing.")
 				break
 			}
