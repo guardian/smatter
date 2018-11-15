@@ -17,7 +17,9 @@ func LoadTest(target string, duration time.Duration, requestsPerScond int) veget
 		URL:    target,
 	})
 
-	attacker := vegeta.NewAttacker()
+	attacker := vegeta.NewAttacker(
+		vegeta.Timeout(30 * time.Second),
+	)
 
 	var metrics vegeta.Metrics
 

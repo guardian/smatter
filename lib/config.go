@@ -19,7 +19,7 @@ type LoadTestConfig struct {
 	SecondsToDrain          int
 	Endpoint                string
 	LatencyLimitSeconds     float32
-    InitialConcurrencyLevel int
+	InitialConcurrencyLevel int
 }
 
 // load config from json file

@@ -63,6 +63,8 @@ func main() {
 
 		url := "http://" + instance.PublicDnsName + config.Endpoint
 
+		log.Printf("Using url %s\n", url)
+
 		// load test at ever-increasing concurrency levels until we get to
 		// the point where we break our latency SLA.
 
@@ -83,9 +85,10 @@ func main() {
 			)
 
 			log.Printf(
-				"99th percentile latency %s, mean latency %s\n",
+				"99th percentile latency %s, mean latency %s, success ratio %.2f%%\n",
 				metrics.Latencies.P99,
-                metrics.Latencies.Mean,
+				metrics.Latencies.Mean,
+				metrics.Success*100,
 			)
 
 			if metrics.Latencies.Mean > time.Duration(config.LatencyLimitSeconds)*time.Second {
