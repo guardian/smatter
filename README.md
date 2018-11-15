@@ -30,3 +30,8 @@ name to use when calling the aws api.
     "InitialConcurrencyLevel": 60
 }
 ```
+## Example Output
+
+Smatter will iteratively test higher and higher concurrency levels until the target service breaches it's latency SLA.
+
+![Image](https://i.imgur.com/utzJ4Ur.png)
